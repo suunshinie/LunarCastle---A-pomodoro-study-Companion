@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="midnight_base">#12172B</color>
+    <color name="surface_midnight">#1B233E</color>
+    <color name="border_midnight">#253052</color>
+    <color name="lavender_accent">#9D8EC7</color>
+    <color name="lavender_deep">#7A6BA3</color>
+    <color name="gold_accent">#E5C17B</color>
+    <color name="gold_light">#F2D69B</color>
+    <color name="cream_light">#FBF7F0</color>
+    <color name="cream_surface">#F2EBE0</color>
+</resources>

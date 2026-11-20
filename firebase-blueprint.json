@@ -1,0 +1,266 @@
+{
+  "entities": {
+    "FocusSession": {
+      "title": "FocusSession",
+      "description": "Completed Pomodoro focus sprint paired with an herbal tea brew and ambient soundscape mix.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "label": {
+          "type": "string",
+          "description": "Focus sprint intention or study chapter title."
+        },
+        "durationMinutes": {
+          "type": "integer",
+          "description": "Completed focus duration in minutes."
+        },
+        "teaName": {
+          "type": "string",
+          "description": "Herbal tea blend steeped for the session."
+        },
+        "teaSteepMinutes": {
+          "type": "integer",
+          "description": "Tea steep duration in minutes."
+        },
+        "soundscapes": {
+          "type": "array",
+          "description": "Active ambient soundscape names used during the session."
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "label",
+        "durationMinutes",
+        "teaName",
+        "teaSteepMinutes",
+        "soundscapes",
+        "completedAt"
+      ]
+    },
+    "StudyNote": {
+      "title": "StudyNote",
+      "description": "Parchment study note or entry in The Secret Garden (Journal).",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Note heading."
+        },
+        "body": {
+          "type": "string",
+          "description": "Note prose content."
+        },
+        "tag": {
+          "type": "string",
+          "description": "Category tag such as Study, Reflection, Draft, or Tea Note."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether the note is pinned to the top of the notebook."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification server timestamp."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "body",
+        "tag",
+        "pinned",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DiamondMilestone": {
+      "title": "DiamondMilestone",
+      "description": "Study milestone item rendered with a diamond constellation checkbox.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Milestone task description."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Completion state."
+        },
+        "linkedTea": {
+          "type": "string",
+          "description": "Optional tea pairing tag for the milestone."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last modification server timestamp."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "completed",
+        "linkedTea",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "BookEntry": {
+      "title": "BookEntry",
+      "description": "Reading log book card with hanging gold bookmark status tag.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Book title."
+        },
+        "author": {
+          "type": "string",
+          "description": "Book author."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Reading", "Finished", "Shelf"],
+          "description": "Reading status shown on the bookmark ribbon."
+        },
+        "currentPage": {
+          "type": "integer",
+          "description": "Current page read."
+        },
+        "totalPages": {
+          "type": "integer",
+          "description": "Total page count."
+        },
+        "bookmarkLabel": {
+          "type": "string",
+          "description": "Short chapter or ribbon label."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "author",
+        "status",
+        "currentPage",
+        "totalPages",
+        "bookmarkLabel",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "QuoteCard": {
+      "title": "QuoteCard",
+      "description": "Saved literary excerpt and personal margin note.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "bookId": {
+          "type": "string",
+          "description": "Optional BookEntry document ID."
+        },
+        "bookTitle": {
+          "type": "string",
+          "description": "Source book title."
+        },
+        "quoteText": {
+          "type": "string",
+          "description": "Highlighted literary excerpt."
+        },
+        "pageNumber": {
+          "type": "integer",
+          "description": "Page footnote index."
+        },
+        "reflectionNote": {
+          "type": "string",
+          "description": "Personal or Gemini-assisted margin reflection."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update server timestamp."
+        }
+      },
+      "required": [
+        "userId",
+        "bookId",
+        "bookTitle",
+        "quoteText",
+        "pageNumber",
+        "reflectionNote",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/focusSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/FocusSession" },
+      "description": "User-scoped focus and tea brew session logs."
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/StudyNote" },
+      "description": "User-scoped parchment study notes."
+    },
+    "/users/{userId}/milestones/{milestoneId}": {
+      "schema": { "$ref": "#/entities/DiamondMilestone" },
+      "description": "User-scoped diamond milestone checklist items."
+    },
+    "/users/{userId}/books/{bookId}": {
+      "schema": { "$ref": "#/entities/BookEntry" },
+      "description": "User-scoped reading log books."
+    },
+    "/users/{userId}/quotes/{quoteId}": {
+      "schema": { "$ref": "#/entities/QuoteCard" },
+      "description": "User-scoped saved literary quotes."
+    }
+  }
+}

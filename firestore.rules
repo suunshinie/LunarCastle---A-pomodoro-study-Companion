@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny all reads and writes by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity validators
+    function isValidFocusSession(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.label is string && data.label.size() >= 1 && data.label.size() <= 120 &&
+             data.durationMinutes is int && data.durationMinutes >= 1 && data.durationMinutes <= 180 &&
+             data.teaName is string && data.teaName.size() >= 1 && data.teaName.size() <= 60 &&
+             data.teaSteepMinutes is int && data.teaSteepMinutes >= 0 && data.teaSteepMinutes <= 30 &&
+             data.soundscapes is list && data.soundscapes.size() <= 6 &&
+             (data.soundscapes.size() == 0 || data.soundscapes[0] is string) &&
+             data.completedAt is timestamp && data.completedAt <= request.time;
+    }
+
+    function isValidStudyNote(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 140 &&
+             data.body is string && data.body.size() <= 10000 &&
+             data.tag is string && data.tag.size() >= 1 && data.tag.size() <= 40 &&
+             data.pinned is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMilestone(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.completed is bool &&
+             data.linkedTea is string && data.linkedTea.size() <= 60 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidBookEntry(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             data.author is string && data.author.size() >= 1 && data.author.size() <= 120 &&
+             data.status is string && data.status in ['Reading', 'Finished', 'Shelf'] &&
+             data.totalPages is int && data.totalPages >= 1 && data.totalPages <= 20000 &&
+             data.currentPage is int && data.currentPage >= 0 && data.currentPage <= data.totalPages &&
+             data.bookmarkLabel is string && data.bookmarkLabel.size() <= 60 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidQuoteCard(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.bookId is string && data.bookId.size() <= 128 &&
+             data.bookTitle is string && data.bookTitle.size() >= 1 && data.bookTitle.size() <= 160 &&
+             data.quoteText is string && data.quoteText.size() >= 1 && data.quoteText.size() <= 2000 &&
+             data.pageNumber is int && data.pageNumber >= 0 && data.pageNumber <= 20000 &&
+             data.reflectionNote is string && data.reflectionNote.size() <= 2000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      // Subcollection: Focus & Tea Brew Sessions (append-only logs, deletable by owner)
+      match /focusSessions/{sessionId} {
+        allow get: if isOwner(userId) && isValidId(sessionId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(sessionId) &&
+                         incoming().keys().hasAll(['userId', 'label', 'durationMinutes', 'teaName', 'teaSteepMinutes', 'soundscapes', 'completedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'label', 'durationMinutes', 'teaName', 'teaSteepMinutes', 'soundscapes', 'completedAt']) &&
+                         isValidFocusSession(incoming(), userId);
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(sessionId);
+      }
+
+      // Subcollection: Study Notes
+      match /notes/{noteId} {
+        allow get: if isOwner(userId) && isValidId(noteId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(noteId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'body', 'tag', 'pinned', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'body', 'tag', 'pinned', 'createdAt', 'updatedAt']) &&
+                         isValidStudyNote(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(noteId) &&
+                         isValidStudyNote(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'body', 'tag', 'pinned', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(noteId);
+      }
+
+      // Subcollection: Diamond Milestones
+      match /milestones/{milestoneId} {
+        allow get: if isOwner(userId) && isValidId(milestoneId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(milestoneId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'completed', 'linkedTea', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'completed', 'linkedTea', 'createdAt', 'updatedAt']) &&
+                         isValidMilestone(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(milestoneId) &&
+                         isValidMilestone(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'completed', 'linkedTea', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(milestoneId);
+      }
+
+      // Subcollection: Reading Log Books
+      match /books/{bookId} {
+        allow get: if isOwner(userId) && isValidId(bookId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(bookId) &&
+                         incoming().keys().hasAll(['userId', 'title', 'author', 'status', 'currentPage', 'totalPages', 'bookmarkLabel', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'author', 'status', 'currentPage', 'totalPages', 'bookmarkLabel', 'createdAt', 'updatedAt']) &&
+                         isValidBookEntry(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(bookId) &&
+                         isValidBookEntry(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'author', 'status', 'currentPage', 'totalPages', 'bookmarkLabel', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(bookId);
+      }
+
+      // Subcollection: Quote Cards
+      match /quotes/{quoteId} {
+        allow get: if isOwner(userId) && isValidId(quoteId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(quoteId) &&
+                         incoming().keys().hasAll(['userId', 'bookId', 'bookTitle', 'quoteText', 'pageNumber', 'reflectionNote', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'bookId', 'bookTitle', 'quoteText', 'pageNumber', 'reflectionNote', 'createdAt', 'updatedAt']) &&
+                         isValidQuoteCard(incoming(), userId);
+        allow update: if isOwner(userId) && isValidId(quoteId) &&
+                         isValidQuoteCard(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['bookId', 'bookTitle', 'quoteText', 'pageNumber', 'reflectionNote', 'updatedAt']);
+        allow delete: if isOwner(userId) && isValidId(quoteId);
+      }
+    }
+  }
+}
